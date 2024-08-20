@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Usuarios</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        .navbar {
+            background-color: #007bff;
+            color: #fff;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 4px;
+        }
+        .navbar a:hover {
+            background-color: #0056b3;
+        }
+        .content {
+            padding: 20px;
+        }
+        form {
+            max-width: 600px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        form input, form select, form button {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        form button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        form button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="index.html">Dashboard</a>
+        <a href="productos_form.html">Gestionar Productos</a>
+        <a href="usuarios.html">Gestionar Usuarios</a>
+    </div>
+    <div class="content">
+        <h1>Formulario de Usuarios</h1>
+        <form id="usuarioForm">
+            <input type="hidden" id="usuarioId" name="id">
+            <label for="nombreC">Nombre Completo</label>
+            <input type="text" id="nombreC" name="nombreC" required>
+            <label for="Roles_id">Rol</label>
+            <select id="Roles_id" name="Roles_id" required>
+                <!-- Opciones de roles se llenarán aquí -->
+            </select>
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">Guardar Usuario</button>
+        </form>
+        <h2>Lista de Usuarios</h2>
+        <table id="usuariosTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre Completo</th>
+                    <th>Rol</th>
+                    <th>Email</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Los datos se llenarán aquí mediante JavaScript -->
+            </tbody>
+        </table>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('usuarioForm');
+            const tableBody = document.querySelector('#usuariosTable tbody');
+            const rolSelect = document.getElementById('Roles_id');
+
+            // Cargar roles
+            function loadRoles() {
+                fetch('roles.php')
+                    .then(response => response.json())
+                    .then(data => {
+                        rolSelect.innerHTML = '';
+                        data.forEach(rol => {
+                            const option = document.createElement('option');
+                            option.value = rol.id;
+                            option.textContent = rol.nombre;
+                            rolSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+            loadRoles();
+
+            // Cargar usuarios
+            function loadUsuarios() {
+                fetch('usuarios.php')
+                    .then(response => response.json())
+                    .then(data => {
+                        tableBody.innerHTML = '';
+                        data.forEach(usuario => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${usuario.id}</td>
+                                <td>${usuario.nombreC}</td>
+                                <td>${usuario.Roles_id}</td>
+                                <td>${usuario.email}</td>
+                                <td>
+                                    <button onclick="editUsuario(${usuario.id})">Editar</button>
+                                    <button onclick="deleteUsuario(${usuario.id})">Eliminar</button>
+                                </td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+            loadUsuarios();
+
+            // Guardar o actualizar usuario
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const id = document.getElementById('usuarioId').value;
+                const nombreC = document.getElementById('nombreC').value;
+                const Roles_id = document.getElementById('Roles_id').value;
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `usuarios.php?id=${id}` : 'usuarios.php';
+
+                fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ nombreC, Roles_id, email, password }),
+                })
+                .then(response => response.json())
+                .then(() => {
+                    loadUsuarios();
+                    form.reset();
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
+
+        // Editar usuario
+        function editUsuario(id) {
+            fetch(`usuarios.php?id=${id}`)
+                .then(response => response.json())
+                .then(usuario => {
+                    document.getElementById('usuarioId').value = usuario.id;
+                    document.getElementById('nombreC').value = usuario.nombreC;
+                    document.getElementById('Roles_id').value = usuario.Roles_id;
+                    document.getElementById('email').value = usuario.email;
+                    document.getElementById('password').value = ''; // No se debe mostrar la contraseña actual por razones de seguridad
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Eliminar usuario
+        function deleteUsuario(id) {
+            fetch(`usuarios.php?id=${id}`, {
+                method: 'DELETE',
+            })
+            .then(() => {
+                loadUsuarios();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
